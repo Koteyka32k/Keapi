@@ -23,14 +23,22 @@ public class EventBus implements IEventBus {
     @Override
     public void subscribe(Object subscriber) {
         List<IListener> listeners = getSubscribers(subscriber);
+        IListener listener;
         for (int i = -1; ++i < listeners.size(); ) {
+            listener = listeners.get(i);
+            listenerMap.get(listener.getTarget()).add(listener);
         }
     }
 
     @Override
+    public void subscribe(IListener subscriber) {
+        List<IListener> listeners = listenerMap.get(subscriber.getTarget());
         if (listeners != null) {
+            listeners.add(subscriber);
         } else {
             listeners = new PrioritizedSubscriberList();
+            listeners.add(subscriber);
+            listenerMap.put(subscriber.getTarget(), listeners);
         }
     }
 
@@ -45,13 +53,17 @@ public class EventBus implements IEventBus {
     }
 
     @Override
+    public void unsubscribe(IListener subscriber) {
+        List<IListener> listeners = listenerMap.get(subscriber.getTarget());
         if (listeners != null) {
+            listeners.remove(subscriber);
         }
     }
 
     public <T> T post(T event) {
         List<IListener> listeners = listenerMap.get(event.getClass());
         if (listeners != null) {
+            for (int i = -1; ++i < listeners.size();) {
                 listeners.get(i).invokeCallback(event);
             }
         }
@@ -64,6 +76,7 @@ public class EventBus implements IEventBus {
         List<IListener> listeners = listenerMap.get(event.getClass());
         if (listeners != null) {
             IListener info;
+            for (int i = -1; ++i < listeners.size();) {
                 info = listeners.get(i);
                 if (info.getStage() != Stage.PREFERRED) {
                     if (info.getStage() != Stage.ANY) {
@@ -88,6 +101,7 @@ public class EventBus implements IEventBus {
         List<IListener> listeners = listenerMap.get(event.getClass());
         if (listeners != null) {
             IListener info;
+            for (int i = -1; ++i < listeners.size();) {
                 info = listeners.get(i);
                 if (event.isCancelled() && !info.ignoresCancellation()) {
                     continue;
@@ -114,6 +128,7 @@ public class EventBus implements IEventBus {
         List<IListener> listeners = listenerMap.get(event.getClass());
         if (listeners != null) {
             IListener info;
+            for (int i = -1; ++i < listeners.size();) {
                 info = listeners.get(i);
                 if (event.isCancelled() && !info.ignoresCancellation()) {
                     continue;
